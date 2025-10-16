@@ -1,27 +1,45 @@
 package main
 
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+)
+
 func main() {
-	chunk := &Chunk{}
-	constant := chunk.AddConstant(1.2)
-	chunk.Write(OP_CONSTANT, 123)
-	chunk.Write(byte(constant), 123)
+	args := os.Args[1:]
+	if len(args) > 1 {
+		log.Fatal("Usage: jlox [script]")
+	} else if len(args) == 1 {
+		runFile(args[0])
+	} else {
+		repl()
+	}
+}
 
-	constant = chunk.AddConstant(3.4)
-	chunk.Write(OP_CONSTANT, 123)
-	chunk.Write(byte(constant), 123)
+func repl() {
+	scanner := bufio.NewScanner(os.Stdin)
+	compiler := &Compiler{}
+	for {
+		fmt.Print("> ")
+		if !scanner.Scan() {
+			break
+		}
+		line := scanner.Text()
+		if len(line) == 0 {
+			continue
+		}
 
-	chunk.Write(OP_ADD, 123)
+		compiler.compile(line)
+	}
+}
 
-	constant = chunk.AddConstant(5.6)
-	chunk.Write(OP_CONSTANT, 123)
-	chunk.Write(byte(constant), 123)
-
-	chunk.Write(OP_DIVIDE, 123)
-
-	chunk.Write(OP_NEGATE, 123)
-
-	chunk.Write(OP_RETURN, 123)
-	vm := &VM{}
-	vm.Interpret(chunk)
-
+func runFile(path string) {
+	source, err := os.ReadFile(path)
+	if err != nil {
+		log.Panicf("An error occurred while reading source file %v", err)
+	}
+	compiler := &Compiler{}
+	compiler.compile(string(source))
 }

@@ -13,16 +13,22 @@ const (
 )
 
 type VM struct {
-	chunk *Chunk
-	ip    int
-	stack []Value
+	chunk    *Chunk
+	ip       int
+	stack    []Value
+	compiler *Compiler
 }
 
-func (vm *VM) Interpret(c *Chunk) InterpretResult {
-	vm.chunk = c
+func (vm *VM) initVM() {
+	vm.chunk = nil
 	vm.ip = 0
+	vm.compiler = &Compiler{}
 	vm.resetStack()
-	return vm.run()
+}
+
+func (vm *VM) Interpret(source string) InterpretResult {
+	vm.compiler.compile(source)
+	return INTERPRET_OK
 }
 
 func (vm *VM) run() InterpretResult {
