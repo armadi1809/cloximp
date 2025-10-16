@@ -3,6 +3,11 @@ package main
 const (
 	OP_RETURN byte = iota
 	OP_CONSTANT
+	OP_NEGATE
+	OP_ADD
+	OP_SUBSTRACT
+	OP_MULTIPLY
+	OP_DIVIDE
 )
 
 type Chunk struct {

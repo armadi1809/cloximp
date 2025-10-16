@@ -19,10 +19,20 @@ func disassembleInstruction(c *Chunk, offset int) int {
 	}
 
 	switch inst {
-	case byte(OP_RETURN):
+	case OP_RETURN:
 		return simpleInstruction("OP_RETURN", offset)
-	case byte(OP_CONSTANT):
+	case OP_CONSTANT:
 		return constantInstruction("OP_CONSTANT", offset, c)
+	case OP_NEGATE:
+		return simpleInstruction("OP_NEGATE", offset)
+	case OP_DIVIDE:
+		return simpleInstruction("OP_DIVIDE", offset)
+	case OP_ADD:
+		return simpleInstruction("OP_ADD", offset)
+	case OP_MULTIPLY:
+		return simpleInstruction("OP_MULTIPLY", offset)
+	case OP_SUBSTRACT:
+		return simpleInstruction("OP_SUBSTRACT", offset)
 	default:
 		fmt.Printf("Unknown opcode %d\n", inst)
 		return offset + 1

@@ -21,24 +21,57 @@ type VM struct {
 func (vm *VM) Interpret(c *Chunk) InterpretResult {
 	vm.chunk = c
 	vm.ip = 0
-
+	vm.resetStack()
 	return vm.run()
 }
 
 func (vm *VM) run() InterpretResult {
 	for {
 		if DEBUG_TRACE_EXECUTION {
+			fmt.Print("          ")
+			for _, slot := range vm.stack {
+				fmt.Print("[ ")
+				fmt.Print(slot)
+				fmt.Print(" ]")
+			}
+			fmt.Println()
 			disassembleInstruction(vm.chunk, vm.ip)
 		}
 		inst := vm.readByte()
 		switch inst {
 		case OP_RETURN:
+			fmt.Print(vm.popStack())
+			fmt.Println()
 			return INTERPRET_OK
 		case OP_CONSTANT:
 			constant := vm.readConstant()
-			fmt.Print(constant)
-			fmt.Println()
+			vm.pushStack(constant)
+		case OP_NEGATE:
+			vm.pushStack(-vm.popStack())
+		case OP_ADD:
+			vm.performBinaryOp(inst)
+		case OP_DIVIDE:
+			vm.performBinaryOp(inst)
+		case OP_MULTIPLY:
+			vm.performBinaryOp(inst)
+		case OP_SUBSTRACT:
+			vm.performBinaryOp(inst)
 		}
+	}
+}
+
+func (vm *VM) performBinaryOp(operation byte) {
+	b := vm.popStack()
+	a := vm.popStack()
+	switch operation {
+	case OP_ADD:
+		vm.pushStack(a + b)
+	case OP_DIVIDE:
+		vm.pushStack(a / b)
+	case OP_MULTIPLY:
+		vm.pushStack(a * b)
+	case OP_SUBSTRACT:
+		vm.pushStack(a / b)
 	}
 }
 
