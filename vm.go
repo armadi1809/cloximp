@@ -15,6 +15,7 @@ const (
 type VM struct {
 	chunk *Chunk
 	ip    int
+	stack []Value
 }
 
 func (vm *VM) Interpret(c *Chunk) InterpretResult {
@@ -49,4 +50,20 @@ func (vm *VM) readByte() byte {
 
 func (vm *VM) readConstant() Value {
 	return vm.chunk.Constants.values[vm.readByte()]
+}
+
+func (vm *VM) resetStack() {
+	vm.stack = []Value{}
+}
+
+func (vm *VM) pushStack(val Value) {
+	vm.stack = append(vm.stack, val)
+}
+
+func (vm *VM) popStack() Value {
+	stackLen := len(vm.stack)
+	val := vm.stack[stackLen-1]
+	vm.stack = vm.stack[:stackLen-1]
+
+	return val
 }
