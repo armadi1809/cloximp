@@ -9,7 +9,7 @@ const (
 
 type Chunk struct {
 	Code      []byte
-	Constants []int
+	Constants ValueArray
 	lines     []int
 }
 
@@ -25,4 +25,9 @@ func (c *Chunk) Count() int {
 func (c *Chunk) WriteOpCode(o OpCode, line int) {
 	c.Code = append(c.Code, byte(o))
 	c.lines = append(c.lines, line)
+}
+
+func (c *Chunk) AddConstant(val Value) int {
+	c.Constants.values = append(c.Constants.values, val)
+	return len(c.Constants.values) - 1
 }

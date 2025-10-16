@@ -12,10 +12,17 @@ func DisassembleChunk(c *Chunk, name string) {
 func disassembleInstruction(c *Chunk, offset int) int {
 	fmt.Printf("%04d ", offset)
 	inst := c.Code[offset]
+	if offset > 0 && c.lines[offset] == c.lines[offset-1] {
+		fmt.Print("   | ")
+	} else {
+		fmt.Printf("%4d ", c.lines[offset])
+	}
 
 	switch inst {
 	case byte(OP_RETURN):
 		return simpleInstruction("OP_RETURN", offset)
+	case byte(OP_CONSTANT):
+		return constantInstruction("OP_CONSTANT", offset, c)
 	default:
 		fmt.Printf("Unknown opcode %d\n", inst)
 		return offset + 1
@@ -26,4 +33,13 @@ func disassembleInstruction(c *Chunk, offset int) int {
 func simpleInstruction(name string, offset int) int {
 	fmt.Printf("%s\n", name)
 	return offset + 1
+}
+
+func constantInstruction(name string, offset int, c *Chunk) int {
+	constantIdx := c.Code[offset+1]
+	fmt.Printf("%-16s %4d '", name, constantIdx)
+	fmt.Print(c.Constants.values[constantIdx])
+
+	fmt.Printf("'\n")
+	return offset + 2
 }
