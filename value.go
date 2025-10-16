@@ -8,6 +8,6 @@ type ValueArray struct {
 	values []Value
 }
 
-func (v Value) Print() {
-	fmt.Printf("%g", v)
+func (v Value) String() string {
+	return fmt.Sprintf("%g", v)
 }
