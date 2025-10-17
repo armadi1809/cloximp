@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 const (
 	TOKEN_EOF        = "EOF"
 	TOKEN_STRING     = "STRING"
@@ -152,8 +154,7 @@ func (sc *Scanner) scanToken() Token {
 	case '"':
 		return sc.scanString()
 	}
-
-	return sc.errorToken("Uexpected character")
+	return sc.errorToken(fmt.Sprintf("Unexpected character %s", string(c)))
 
 }
 
@@ -255,7 +256,7 @@ func (sc *Scanner) skipWhitespaces() {
 }
 
 func (sc *Scanner) getCharAtPos(pos int) int32 {
-	if sc.isAtEnd() {
+	if pos > len(sc.Source)-1 {
 		return '\x00'
 	}
 	return []rune(sc.Source)[pos]

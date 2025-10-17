@@ -20,7 +20,8 @@ func main() {
 
 func repl() {
 	scanner := bufio.NewScanner(os.Stdin)
-	compiler := &Compiler{}
+	vm := &VM{}
+	vm.initVM()
 	for {
 		fmt.Print("> ")
 		if !scanner.Scan() {
@@ -31,7 +32,7 @@ func repl() {
 			continue
 		}
 
-		compiler.compile(line)
+		vm.Interpret(line)
 	}
 }
 

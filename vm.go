@@ -13,24 +13,39 @@ const (
 )
 
 type VM struct {
-	chunk    *Chunk
 	ip       int
 	stack    []Value
 	compiler *Compiler
 }
 
 func (vm *VM) initVM() {
-	vm.chunk = nil
+	vm.initCompiler()
 	vm.ip = 0
 	vm.compiler = &Compiler{}
 	vm.resetStack()
 }
 
 func (vm *VM) Interpret(source string) InterpretResult {
+	vm.initCompiler()
+
+	if !vm.compiler.compile(source) {
+		return INTERPRET_COMPILE_ERROR
+	}
 	vm.compiler.compile(source)
-	return INTERPRET_OK
+
+	return vm.run()
 }
 
+func (vm *VM) initCompiler() {
+	vm.compiler = &Compiler{
+		Sc:    &Scanner{},
+		Chunk: &Chunk{},
+		Ps: &Parser{
+			panicMode: false,
+			hadError:  false,
+		},
+	}
+}
 func (vm *VM) run() InterpretResult {
 	for {
 		if DEBUG_TRACE_EXECUTION {
@@ -41,7 +56,7 @@ func (vm *VM) run() InterpretResult {
 				fmt.Print(" ]")
 			}
 			fmt.Println()
-			disassembleInstruction(vm.chunk, vm.ip)
+			disassembleInstruction(vm.compiler.Chunk, vm.ip)
 		}
 		inst := vm.readByte()
 		switch inst {
@@ -82,13 +97,13 @@ func (vm *VM) performBinaryOp(operation byte) {
 }
 
 func (vm *VM) readByte() byte {
-	inst := vm.chunk.Code[vm.ip]
+	inst := vm.compiler.Chunk.Code[vm.ip]
 	vm.ip += 1
 	return inst
 }
 
 func (vm *VM) readConstant() Value {
-	return vm.chunk.Constants.values[vm.readByte()]
+	return vm.compiler.Chunk.Constants.values[vm.readByte()]
 }
 
 func (vm *VM) resetStack() {
