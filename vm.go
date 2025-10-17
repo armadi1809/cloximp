@@ -89,7 +89,7 @@ func (vm *VM) performBinaryOp(operation byte) {
 	case OP_MULTIPLY:
 		vm.pushStack(a * b)
 	case OP_SUBSTRACT:
-		vm.pushStack(a / b)
+		vm.pushStack(a - b)
 	}
 }
 
