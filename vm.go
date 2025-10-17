@@ -31,7 +31,6 @@ func (vm *VM) Interpret(source string) InterpretResult {
 	if !vm.compiler.compile(source) {
 		return INTERPRET_COMPILE_ERROR
 	}
-	vm.compiler.compile(source)
 
 	return vm.run()
 }
@@ -61,8 +60,6 @@ func (vm *VM) run() InterpretResult {
 		inst := vm.readByte()
 		switch inst {
 		case OP_RETURN:
-			fmt.Print(vm.popStack())
-			fmt.Println()
 			return INTERPRET_OK
 		case OP_CONSTANT:
 			constant := vm.readConstant()
