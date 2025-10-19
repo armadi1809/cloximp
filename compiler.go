@@ -117,7 +117,7 @@ func (c *Compiler) emitConstant(val float64) {
 }
 
 func (c *Compiler) makeConstant(val float64) byte {
-	constant := c.Chunk.AddConstant(Value(val))
+	constant := c.Chunk.AddConstant(NumberVal(val))
 	if constant > 255 {
 		c.error("Too many constants in one chunk")
 		return 0

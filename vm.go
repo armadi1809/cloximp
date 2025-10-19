@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 type InterpretResult byte
 
@@ -51,7 +54,7 @@ func (vm *VM) run() InterpretResult {
 			fmt.Print("          ")
 			for _, slot := range vm.stack {
 				fmt.Print("[ ")
-				fmt.Print(slot)
+				slot.Print()
 				fmt.Print(" ]")
 			}
 			fmt.Println()
@@ -65,32 +68,50 @@ func (vm *VM) run() InterpretResult {
 			constant := vm.readConstant()
 			vm.pushStack(constant)
 		case OP_NEGATE:
-			vm.pushStack(-vm.popStack())
+			if !isNumber(vm.peek(0)) {
+				vm.runtimeError("Operand must be a number")
+				return INTERPRET_RUNTIME_ERROR
+			}
+			vm.pushStack(NumberVal(-vm.popStack().AsNumber()))
 		case OP_ADD:
-			vm.performBinaryOp(inst)
+			if !vm.performBinaryOp(inst) {
+				return INTERPRET_RUNTIME_ERROR
+			}
+
 		case OP_DIVIDE:
-			vm.performBinaryOp(inst)
+			if !vm.performBinaryOp(inst) {
+				return INTERPRET_RUNTIME_ERROR
+			}
 		case OP_MULTIPLY:
-			vm.performBinaryOp(inst)
+			if !vm.performBinaryOp(inst) {
+				return INTERPRET_RUNTIME_ERROR
+			}
 		case OP_SUBSTRACT:
-			vm.performBinaryOp(inst)
+			if !vm.performBinaryOp(inst) {
+				return INTERPRET_RUNTIME_ERROR
+			}
 		}
 	}
 }
 
-func (vm *VM) performBinaryOp(operation byte) {
-	b := vm.popStack()
-	a := vm.popStack()
+func (vm *VM) performBinaryOp(operation byte) bool {
+	if !isNumber(vm.peek(0)) || !isNumber(vm.peek(1)) {
+		vm.runtimeError("Operands must be numbers")
+		return false
+	}
+	b := vm.popStack().AsNumber()
+	a := vm.popStack().AsNumber()
 	switch operation {
 	case OP_ADD:
-		vm.pushStack(a + b)
+		vm.pushStack(NumberVal(a + b))
 	case OP_DIVIDE:
-		vm.pushStack(a / b)
+		vm.pushStack(NumberVal(a / b))
 	case OP_MULTIPLY:
-		vm.pushStack(a * b)
+		vm.pushStack(NumberVal(a * b))
 	case OP_SUBSTRACT:
-		vm.pushStack(a - b)
+		vm.pushStack(NumberVal(a - b))
 	}
+	return true
 }
 
 func (vm *VM) readByte() byte {
@@ -117,4 +138,16 @@ func (vm *VM) popStack() Value {
 	vm.stack = vm.stack[:stackLen-1]
 
 	return val
+}
+
+func (vm *VM) peek(distance int) Value {
+	return vm.stack[-1-distance]
+}
+
+func (vm *VM) runtimeError(format string, a ...any) {
+	fmt.Fprintf(os.Stderr, format, a...)
+	fmt.Fprintln(os.Stderr)
+	instruction := vm.ip - 1
+	line := vm.compiler.Chunk.lines[instruction]
+	fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
 }
