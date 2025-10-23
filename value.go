@@ -85,6 +85,22 @@ func isNil(v Value) bool {
 	return v.Type() == VAL_NIL
 }
 
+func valuesEqual(a, b Value) bool {
+	if a.Type() != b.Type() {
+		return false
+	}
+	switch a.Type() {
+	case VAL_BOOL:
+		return a.AsBoolean() == b.AsBoolean()
+	case VAL_NUMBER:
+		return a.AsNumber() == b.AsNumber()
+	case VAL_NIL:
+		return true
+	}
+
+	return false
+}
+
 type ValueArray struct {
 	values []Value
 }

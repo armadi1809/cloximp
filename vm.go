@@ -73,6 +73,8 @@ func (vm *VM) run() InterpretResult {
 				return INTERPRET_RUNTIME_ERROR
 			}
 			vm.pushStack(NumberVal(-vm.popStack().AsNumber()))
+		case OP_NOT:
+			vm.pushStack(BoolVal(isFalsey(vm.popStack())))
 		case OP_ADD:
 			if !vm.performBinaryOp(inst) {
 				return INTERPRET_RUNTIME_ERROR
@@ -96,6 +98,16 @@ func (vm *VM) run() InterpretResult {
 			vm.pushStack(BoolVal(true))
 		case OP_FALSE:
 			vm.pushStack(BoolVal(false))
+		case OP_EQUAL:
+			vm.pushStack(BoolVal(valuesEqual(vm.popStack(), vm.popStack())))
+		case OP_LESS:
+			if !vm.performBinaryOp(inst) {
+				return INTERPRET_RUNTIME_ERROR
+			}
+		case OP_GREATER:
+			if !vm.performBinaryOp(inst) {
+				return INTERPRET_RUNTIME_ERROR
+			}
 		}
 	}
 }
@@ -116,6 +128,10 @@ func (vm *VM) performBinaryOp(operation byte) bool {
 		vm.pushStack(NumberVal(a * b))
 	case OP_SUBSTRACT:
 		vm.pushStack(NumberVal(a - b))
+	case OP_GREATER:
+		vm.pushStack(BoolVal(a > b))
+	case OP_LESS:
+		vm.pushStack(BoolVal(a < b))
 	}
 	return true
 }
@@ -147,7 +163,11 @@ func (vm *VM) popStack() Value {
 }
 
 func (vm *VM) peek(distance int) Value {
-	return vm.stack[-1-distance]
+	return vm.stack[len(vm.stack)-1-distance]
+}
+
+func isFalsey(v Value) bool {
+	return isNil(v) || (isBool(v) && !v.AsBoolean())
 }
 
 func (vm *VM) runtimeError(format string, a ...any) {

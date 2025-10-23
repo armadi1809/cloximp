@@ -102,6 +102,19 @@ func (c *Compiler) binary() {
 		c.emitByte(OP_MULTIPLY)
 	case TOKEN_SLASH:
 		c.emitByte(OP_DIVIDE)
+	case TOKEN_GREATER:
+		c.emitByte(OP_GREATER)
+	case TOKEN_LESS:
+		c.emitByte(OP_LESS)
+	case TOKEN_EQUAL_EQUAL:
+		c.emitByte(OP_EQUAL)
+	case TOKEN_LESS_EQUAL:
+		c.emitBytes(OP_GREATER, OP_NOT)
+	case TOKEN_BANG_EQUAL:
+		c.emitBytes(OP_EQUAL, OP_NOT)
+	case TOKEN_GREATER_EQUAL:
+		c.emitBytes(OP_LESS, OP_NOT)
+
 	default:
 		return // Unreachable.
 	}
@@ -118,6 +131,8 @@ func (c *Compiler) unary() {
 	switch operatorType {
 	case TOKEN_MINUS:
 		c.emitByte(OP_NEGATE)
+	case TOKEN_BANG:
+		c.emitByte(OP_NOT)
 	default:
 		return
 	}
@@ -218,14 +233,14 @@ func (c *Compiler) initRules() {
 		TOKEN_SEMICOLON:     {nil, nil, PREC_NONE},
 		TOKEN_SLASH:         {nil, c.binary, PREC_FACTOR},
 		TOKEN_STAR:          {nil, c.binary, PREC_FACTOR},
-		TOKEN_BANG:          {nil, nil, PREC_NONE},
-		TOKEN_BANG_EQUAL:    {nil, nil, PREC_NONE},
+		TOKEN_BANG:          {c.unary, nil, PREC_NONE},
+		TOKEN_BANG_EQUAL:    {nil, c.binary, PREC_EQUALITY},
 		TOKEN_EQUAL:         {nil, nil, PREC_NONE},
-		TOKEN_EQUAL_EQUAL:   {nil, nil, PREC_NONE},
-		TOKEN_GREATER:       {nil, nil, PREC_NONE},
-		TOKEN_GREATER_EQUAL: {nil, nil, PREC_NONE},
-		TOKEN_LESS:          {nil, nil, PREC_NONE},
-		TOKEN_LESS_EQUAL:    {nil, nil, PREC_NONE},
+		TOKEN_EQUAL_EQUAL:   {nil, c.binary, PREC_EQUALITY},
+		TOKEN_GREATER:       {nil, c.binary, PREC_COMPARISON},
+		TOKEN_GREATER_EQUAL: {nil, c.binary, PREC_COMPARISON},
+		TOKEN_LESS:          {nil, c.binary, PREC_COMPARISON},
+		TOKEN_LESS_EQUAL:    {nil, c.binary, PREC_COMPARISON},
 		TOKEN_IDENTIFIER:    {nil, nil, PREC_NONE},
 		TOKEN_STRING:        {nil, nil, PREC_NONE},
 		TOKEN_NUMBER:        {c.number, nil, PREC_NONE},
