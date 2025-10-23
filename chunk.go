@@ -8,6 +8,9 @@ const (
 	OP_SUBSTRACT
 	OP_MULTIPLY
 	OP_DIVIDE
+	OP_NIL
+	OP_TRUE
+	OP_FALSE
 )
 
 type Chunk struct {

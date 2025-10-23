@@ -78,6 +78,17 @@ func (c *Compiler) number() {
 	c.emitConstant(val)
 }
 
+func (c *Compiler) literal() {
+	switch c.Ps.previous.Type {
+	case TOKEN_NIL:
+		c.emitByte(OP_NIL)
+	case TOKEN_FALSE:
+		c.emitByte(OP_FALSE)
+	case TOKEN_TRUE:
+		c.emitByte(OP_TRUE)
+	}
+}
+
 func (c *Compiler) binary() {
 	opType := c.Ps.previous.Type
 	rule := c.getRule(opType)
@@ -221,17 +232,17 @@ func (c *Compiler) initRules() {
 		TOKEN_AND:           {nil, nil, PREC_NONE},
 		TOKEN_CLASS:         {nil, nil, PREC_NONE},
 		TOKEN_ELSE:          {nil, nil, PREC_NONE},
-		TOKEN_FALSE:         {nil, nil, PREC_NONE},
+		TOKEN_FALSE:         {c.literal, nil, PREC_NONE},
 		TOKEN_FOR:           {nil, nil, PREC_NONE},
 		TOKEN_FUN:           {nil, nil, PREC_NONE},
 		TOKEN_IF:            {nil, nil, PREC_NONE},
-		TOKEN_NIL:           {nil, nil, PREC_NONE},
+		TOKEN_NIL:           {c.literal, nil, PREC_NONE},
 		TOKEN_OR:            {nil, nil, PREC_NONE},
 		TOKEN_PRINT:         {nil, nil, PREC_NONE},
 		TOKEN_RETURN:        {nil, nil, PREC_NONE},
 		TOKEN_SUPER:         {nil, nil, PREC_NONE},
 		TOKEN_THIS:          {nil, nil, PREC_NONE},
-		TOKEN_TRUE:          {nil, nil, PREC_NONE},
+		TOKEN_TRUE:          {c.literal, nil, PREC_NONE},
 		TOKEN_VAR:           {nil, nil, PREC_NONE},
 		TOKEN_WHILE:         {nil, nil, PREC_NONE},
 		TOKEN_ERROR:         {nil, nil, PREC_NONE},

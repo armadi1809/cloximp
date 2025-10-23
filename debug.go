@@ -33,6 +33,12 @@ func disassembleInstruction(c *Chunk, offset int) int {
 		return simpleInstruction("OP_MULTIPLY", offset)
 	case OP_SUBSTRACT:
 		return simpleInstruction("OP_SUBSTRACT", offset)
+	case OP_NIL:
+		return simpleInstruction("OP_NIL", offset)
+	case OP_TRUE:
+		return simpleInstruction("OP_TRUE", offset)
+	case OP_FALSE:
+		return simpleInstruction("OP_FALSE", offset)
 	default:
 		fmt.Printf("Unknown opcode %d\n", inst)
 		return offset + 1

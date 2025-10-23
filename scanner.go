@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 const (
 	TOKEN_EOF        = "EOF"
 	TOKEN_STRING     = "STRING"
@@ -153,8 +151,10 @@ func (sc *Scanner) scanToken() Token {
 		return sc.makeToken(tok)
 	case '"':
 		return sc.scanString()
+	default:
+		return sc.scanIdentifier()
 	}
-	return sc.errorToken(fmt.Sprintf("Unexpected character %s", string(c)))
+	// return sc.errorToken(fmt.Sprintf("Unexpected character %s", string(c)))
 
 }
 

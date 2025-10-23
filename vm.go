@@ -90,6 +90,12 @@ func (vm *VM) run() InterpretResult {
 			if !vm.performBinaryOp(inst) {
 				return INTERPRET_RUNTIME_ERROR
 			}
+		case OP_NIL:
+			vm.pushStack(NilVal{})
+		case OP_TRUE:
+			vm.pushStack(BoolVal(true))
+		case OP_FALSE:
+			vm.pushStack(BoolVal(false))
 		}
 	}
 }
