@@ -10,12 +10,14 @@ const (
 	VAL_BOOL = iota
 	VAL_NIL
 	VAL_NUMBER
+	VAL_OBJ
 )
 
 type Value interface {
 	Type() ValueType
 	AsBoolean() bool
 	AsNumber() float64
+	AsObj()
 	Print()
 }
 
@@ -31,6 +33,10 @@ func (nv NilVal) AsBoolean() bool {
 
 func (nv NilVal) AsNumber() float64 {
 	panic("nil value is not a number!")
+}
+
+func (nv NilVal) AsObj() {
+
 }
 
 func (nv NilVal) Print() {
@@ -51,6 +57,10 @@ func (bv BoolVal) AsNumber() float64 {
 	panic("bool value is not a number!")
 }
 
+func (nv BoolVal) AsObj() {
+
+}
+
 func (bv BoolVal) Print() {
 	fmt.Printf("%t", bool(bv))
 }
@@ -67,6 +77,10 @@ func (nv NumberVal) AsBoolean() bool {
 
 func (nv NumberVal) AsNumber() float64 {
 	return float64(nv)
+}
+
+func (nv NumberVal) AsObj() {
+
 }
 
 func (nv NumberVal) Print() {
