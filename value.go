@@ -17,7 +17,7 @@ type Value interface {
 	Type() ValueType
 	AsBoolean() bool
 	AsNumber() float64
-	AsObj()
+	AsObj() Obj
 	Print()
 }
 
@@ -35,8 +35,8 @@ func (nv NilVal) AsNumber() float64 {
 	panic("nil value is not a number!")
 }
 
-func (nv NilVal) AsObj() {
-
+func (nv NilVal) AsObj() Obj {
+	panic("nil value is not an object")
 }
 
 func (nv NilVal) Print() {
@@ -57,8 +57,8 @@ func (bv BoolVal) AsNumber() float64 {
 	panic("bool value is not a number!")
 }
 
-func (nv BoolVal) AsObj() {
-
+func (nv BoolVal) AsObj() Obj {
+	panic("bool value is not an object")
 }
 
 func (bv BoolVal) Print() {
@@ -79,12 +79,34 @@ func (nv NumberVal) AsNumber() float64 {
 	return float64(nv)
 }
 
-func (nv NumberVal) AsObj() {
-
+func (nv NumberVal) AsObj() Obj {
+	panic("number is not an object")
 }
 
 func (nv NumberVal) Print() {
 	fmt.Printf("%g", float64(nv))
+}
+
+type ObjVal struct{ obj Obj }
+
+func (ob ObjVal) Type() ValueType {
+	return VAL_OBJ
+}
+
+func (ob ObjVal) AsBoolean() bool {
+	panic("object value is not a boolean!")
+}
+
+func (ob ObjVal) AsNumber() float64 {
+	panic("object value is not a number")
+}
+
+func (ob ObjVal) AsObj() Obj {
+	return ob.obj
+}
+
+func (ob ObjVal) Print() {
+	fmt.Printf("%v", ob)
 }
 
 func isBool(v Value) bool {
