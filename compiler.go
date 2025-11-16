@@ -121,8 +121,7 @@ func (c *Compiler) binary() {
 }
 
 func (c *Compiler) str() {
-	// TODO: comeback here in case strings end up in extra quotes
-	c.emitConstant(CreateStringObj(c.Ps.current.Lexeme))
+	c.emitConstant(ObjVal{Object: CreateStringObj(c.Ps.previous.Lexeme[1 : len(c.Ps.previous.Lexeme)-1])})
 }
 
 func (c *Compiler) grouping() {

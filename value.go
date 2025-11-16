@@ -87,24 +87,31 @@ func (nv NumberVal) Print() {
 	fmt.Printf("%g", float64(nv))
 }
 
-func (ob Obj) Type() ValueType {
+type ObjVal struct {
+	Object Obj
+}
+
+func (ob ObjVal) Type() ValueType {
 	return VAL_OBJ
 }
 
-func (ob Obj) AsBoolean() bool {
+func (ob ObjVal) AsBoolean() bool {
 	panic("object value is not a boolean!")
 }
 
-func (ob Obj) AsNumber() float64 {
+func (ob ObjVal) AsNumber() float64 {
 	panic("object value is not a number")
 }
 
-func (ob Obj) AsObj() Obj {
-	return ob
+func (ob ObjVal) AsObj() Obj {
+	return ob.Object
 }
 
-func (ob Obj) Print() {
-	printObj(ob)
+func (ob ObjVal) Print() {
+	switch ob.Object.Type() {
+	case OBJ_STRING:
+		fmt.Print(AsLiteralString(ob))
+	}
 }
 
 func isBool(v Value) bool {

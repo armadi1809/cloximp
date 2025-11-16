@@ -21,7 +21,6 @@ func main() {
 func repl() {
 	scanner := bufio.NewScanner(os.Stdin)
 	vm := &VM{}
-	vm.initVM()
 	for {
 		fmt.Print("> ")
 		if !scanner.Scan() {

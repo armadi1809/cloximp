@@ -24,12 +24,11 @@ type VM struct {
 func (vm *VM) initVM() {
 	vm.initCompiler()
 	vm.ip = 0
-	vm.compiler = &Compiler{}
 	vm.resetStack()
 }
 
 func (vm *VM) Interpret(source string) InterpretResult {
-	vm.initCompiler()
+	vm.initVM()
 
 	if !vm.compiler.compile(source) {
 		return INTERPRET_COMPILE_ERROR
@@ -118,8 +117,8 @@ func (vm *VM) performBinaryOp(operation byte) bool {
 	case OP_ADD:
 		if IsString(vm.peek(0)) && IsString(vm.peek(1)) {
 			b := AsString(vm.popStack())
-			a := AsString(vm.popStack().AsObj())
-			vm.pushStack(CreateStringObj(a.Characters + b.Characters))
+			a := AsString(vm.popStack())
+			vm.pushStack(ObjVal{Object: CreateStringObj(a.Characters + b.Characters)})
 		} else if isNumber(vm.peek(0)) && isNumber(vm.peek(1)) {
 			b := vm.popStack().AsNumber()
 			a := vm.popStack().AsNumber()
