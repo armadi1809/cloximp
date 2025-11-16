@@ -123,6 +123,10 @@ func isObj(v Value) bool {
 	return v.Type() == VAL_OBJ
 }
 
+func IsString(val Value) bool {
+	return IsObjtype(val, OBJ_STRING)
+}
+
 func valuesEqual(a, b Value) bool {
 	if a.Type() != b.Type() {
 		return false
@@ -134,6 +138,8 @@ func valuesEqual(a, b Value) bool {
 		return a.AsNumber() == b.AsNumber()
 	case VAL_NIL:
 		return true
+	case VAL_OBJ:
+		return AsString(a).Characters == AsString(b).Characters
 	}
 
 	return false

@@ -113,24 +113,40 @@ func (vm *VM) run() InterpretResult {
 }
 
 func (vm *VM) performBinaryOp(operation byte) bool {
-	if !isNumber(vm.peek(0)) || !isNumber(vm.peek(1)) {
-		vm.runtimeError("Operands must be numbers")
-		return false
-	}
-	b := vm.popStack().AsNumber()
-	a := vm.popStack().AsNumber()
+
 	switch operation {
 	case OP_ADD:
-		vm.pushStack(NumberVal(a + b))
+		if IsString(vm.peek(0)) && IsString(vm.peek(1)) {
+			b := AsString(vm.popStack())
+			a := AsString(vm.popStack().AsObj())
+			vm.pushStack(CreateStringObj(a.Characters + b.Characters))
+		} else if isNumber(vm.peek(0)) && isNumber(vm.peek(1)) {
+			b := vm.popStack().AsNumber()
+			a := vm.popStack().AsNumber()
+			vm.pushStack(NumberVal(a + b))
+		} else {
+			vm.runtimeError("Operands must be two numbers or two strings")
+			return false
+		}
 	case OP_DIVIDE:
+		b := vm.popStack().AsNumber()
+		a := vm.popStack().AsNumber()
 		vm.pushStack(NumberVal(a / b))
 	case OP_MULTIPLY:
+		b := vm.popStack().AsNumber()
+		a := vm.popStack().AsNumber()
 		vm.pushStack(NumberVal(a * b))
 	case OP_SUBSTRACT:
+		b := vm.popStack().AsNumber()
+		a := vm.popStack().AsNumber()
 		vm.pushStack(NumberVal(a - b))
 	case OP_GREATER:
+		b := vm.popStack().AsNumber()
+		a := vm.popStack().AsNumber()
 		vm.pushStack(BoolVal(a > b))
 	case OP_LESS:
+		b := vm.popStack().AsNumber()
+		a := vm.popStack().AsNumber()
 		vm.pushStack(BoolVal(a < b))
 	}
 	return true
