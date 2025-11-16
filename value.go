@@ -87,26 +87,24 @@ func (nv NumberVal) Print() {
 	fmt.Printf("%g", float64(nv))
 }
 
-type ObjVal struct{ obj Obj }
-
-func (ob ObjVal) Type() ValueType {
+func (ob Obj) Type() ValueType {
 	return VAL_OBJ
 }
 
-func (ob ObjVal) AsBoolean() bool {
+func (ob Obj) AsBoolean() bool {
 	panic("object value is not a boolean!")
 }
 
-func (ob ObjVal) AsNumber() float64 {
+func (ob Obj) AsNumber() float64 {
 	panic("object value is not a number")
 }
 
-func (ob ObjVal) AsObj() Obj {
-	return ob.obj
+func (ob Obj) AsObj() Obj {
+	return ob
 }
 
-func (ob ObjVal) Print() {
-	fmt.Printf("%v", ob)
+func (ob Obj) Print() {
+	printObj(ob)
 }
 
 func isBool(v Value) bool {
@@ -119,6 +117,10 @@ func isNumber(v Value) bool {
 
 func isNil(v Value) bool {
 	return v.Type() == VAL_NIL
+}
+
+func isObj(v Value) bool {
+	return v.Type() == VAL_OBJ
 }
 
 func valuesEqual(a, b Value) bool {

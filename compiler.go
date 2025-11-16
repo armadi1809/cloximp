@@ -75,7 +75,7 @@ func (c *Compiler) parsePrecedence(prec Precedence) {
 
 func (c *Compiler) number() {
 	val, _ := strconv.ParseFloat(c.Ps.previous.Lexeme, 64)
-	c.emitConstant(val)
+	c.emitConstant(NumberVal(val))
 }
 
 func (c *Compiler) literal() {
@@ -120,6 +120,11 @@ func (c *Compiler) binary() {
 	}
 }
 
+func (c *Compiler) str() {
+	// TODO: comeback here in case strings end up in extra quotes
+	c.emitConstant(CreateStringObj(c.Ps.current.Lexeme))
+}
+
 func (c *Compiler) grouping() {
 	c.expression()
 	c.consume(TOKEN_RIGHT_PAREN, "Expected ')' after expression ")
@@ -138,12 +143,12 @@ func (c *Compiler) unary() {
 	}
 }
 
-func (c *Compiler) emitConstant(val float64) {
+func (c *Compiler) emitConstant(val Value) {
 	c.emitBytes(OP_CONSTANT, c.makeConstant(val))
 }
 
-func (c *Compiler) makeConstant(val float64) byte {
-	constant := c.Chunk.AddConstant(NumberVal(val))
+func (c *Compiler) makeConstant(val Value) byte {
+	constant := c.Chunk.AddConstant(val)
 	if constant > 255 {
 		c.error("Too many constants in one chunk")
 		return 0
@@ -242,7 +247,7 @@ func (c *Compiler) initRules() {
 		TOKEN_LESS:          {nil, c.binary, PREC_COMPARISON},
 		TOKEN_LESS_EQUAL:    {nil, c.binary, PREC_COMPARISON},
 		TOKEN_IDENTIFIER:    {nil, nil, PREC_NONE},
-		TOKEN_STRING:        {nil, nil, PREC_NONE},
+		TOKEN_STRING:        {c.str, nil, PREC_NONE},
 		TOKEN_NUMBER:        {c.number, nil, PREC_NONE},
 		TOKEN_AND:           {nil, nil, PREC_NONE},
 		TOKEN_CLASS:         {nil, nil, PREC_NONE},
