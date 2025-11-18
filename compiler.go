@@ -48,10 +48,39 @@ func (c *Compiler) compile(source string) bool {
 	c.Sc.initScanner(source)
 	c.initRules()
 	c.advance()
-	c.expression()
-	c.consume(TOKEN_EOF, "Expect end of expression.")
+	for !c.match(TOKEN_EOF) {
+		c.declaration()
+	}
 	c.endCompiler()
 	return !c.Ps.hadError
+}
+
+func (c *Compiler) declaration() {
+	c.statement()
+}
+
+func (c *Compiler) statement() {
+	if c.match(TOKEN_PRINT) {
+		c.printStatement()
+	}
+}
+
+func (c *Compiler) match(tokType TokenType) bool {
+	if !c.check(tokType) {
+		return false
+	}
+	c.advance()
+	return true
+}
+
+func (c *Compiler) check(tokType TokenType) bool {
+	return c.Ps.current.Type == tokType
+}
+
+func (c *Compiler) printStatement() {
+	c.expression()
+	c.consume(TOKEN_SEMICOLON, "Expect ';' after value.")
+	c.emitByte(OP_PRINT)
 }
 
 func (c *Compiler) expression() {

@@ -107,6 +107,9 @@ func (vm *VM) run() InterpretResult {
 			if !vm.performBinaryOp(inst) {
 				return INTERPRET_RUNTIME_ERROR
 			}
+		case OP_PRINT:
+			vm.popStack().Print()
+			fmt.Print("\n")
 		}
 	}
 }
