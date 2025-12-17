@@ -19,12 +19,14 @@ type VM struct {
 	ip       int
 	stack    []Value
 	compiler *Compiler
+	globals  map[ObjString]Value
 }
 
 func (vm *VM) initVM() {
 	vm.initCompiler()
 	vm.ip = 0
 	vm.resetStack()
+	vm.globals = make(map[ObjString]Value)
 }
 
 func (vm *VM) Interpret(source string) InterpretResult {
@@ -97,6 +99,12 @@ func (vm *VM) run() InterpretResult {
 			vm.pushStack(BoolVal(true))
 		case OP_FALSE:
 			vm.pushStack(BoolVal(false))
+		case OP_POP:
+			vm.popStack()
+		case OP_DEFINE_GLOBAL:
+			name := vm.readString()
+			vm.globals[name] = vm.peek(0)
+			vm.popStack()
 		case OP_EQUAL:
 			vm.pushStack(BoolVal(valuesEqual(vm.popStack(), vm.popStack())))
 		case OP_LESS:
@@ -162,6 +170,10 @@ func (vm *VM) readByte() byte {
 
 func (vm *VM) readConstant() Value {
 	return vm.compiler.Chunk.Constants.values[vm.readByte()]
+}
+
+func (vm *VM) readString() ObjString {
+	return AsString(vm.readConstant())
 }
 
 func (vm *VM) resetStack() {

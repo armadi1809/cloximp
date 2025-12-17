@@ -39,6 +39,10 @@ func disassembleInstruction(c *Chunk, offset int) int {
 		return simpleInstruction("OP_TRUE", offset)
 	case OP_FALSE:
 		return simpleInstruction("OP_FALSE", offset)
+	case OP_POP:
+		return simpleInstruction("OP_POP", offset)
+	case OP_DEFINE_GLOBAL:
+		return constantInstruction("OP_DEFINE_GLOBAL", offset, c)
 	case OP_NOT:
 		return simpleInstruction("OP_NOT", offset)
 	case OP_EQUAL:

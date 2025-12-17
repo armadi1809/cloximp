@@ -56,12 +56,69 @@ func (c *Compiler) compile(source string) bool {
 }
 
 func (c *Compiler) declaration() {
-	c.statement()
+	if c.match(TOKEN_VAR) {
+		c.varDeclaration()
+	} else {
+		c.statement()
+	}
+
+	if c.Ps.panicMode {
+		c.synchronize()
+	}
+}
+
+func (c *Compiler) varDeclaration() {
+	global := c.parseVariable("Expected variable name")
+	if c.match(TOKEN_EQUAL) {
+		c.expression()
+	} else {
+		c.emitByte(OP_NIL)
+	}
+	c.consume(TOKEN_SEMICOLON,
+		"Expect ';' after variable declaration.")
+	c.defineVariable(global)
+}
+
+func (c *Compiler) defineVariable(global byte) {
+	c.emitBytes(OP_DEFINE_GLOBAL, global)
+}
+
+func (c *Compiler) parseVariable(errorMessage string) byte {
+	c.consume(TOKEN_IDENTIFIER, errorMessage)
+	return c.identifierConstant(c.Ps.previous)
+}
+
+func (c *Compiler) identifierConstant(name Token) byte {
+	return c.makeConstant(ObjVal{Object: CreateStringObj(name.Lexeme)})
+}
+
+func (c *Compiler) synchronize() {
+	c.Ps.panicMode = false
+	for c.Ps.current.Type != TOKEN_EOF {
+		if c.Ps.previous.Type == TOKEN_SEMICOLON {
+			return
+		}
+		switch c.Ps.current.Type {
+		case TOKEN_CLASS:
+		case TOKEN_FUN:
+		case TOKEN_VAR:
+		case TOKEN_FOR:
+		case TOKEN_IF:
+		case TOKEN_WHILE:
+		case TOKEN_PRINT:
+		case TOKEN_RETURN:
+			return
+		default:
+		}
+		c.advance()
+	}
 }
 
 func (c *Compiler) statement() {
 	if c.match(TOKEN_PRINT) {
 		c.printStatement()
+	} else {
+		c.expressionStatement()
 	}
 }
 
@@ -81,6 +138,12 @@ func (c *Compiler) printStatement() {
 	c.expression()
 	c.consume(TOKEN_SEMICOLON, "Expect ';' after value.")
 	c.emitByte(OP_PRINT)
+}
+
+func (c *Compiler) expressionStatement() {
+	c.expression()
+	c.consume(TOKEN_SEMICOLON, "Expect ';' after expression")
+	c.emitByte(OP_POP)
 }
 
 func (c *Compiler) expression() {
