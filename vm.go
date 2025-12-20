@@ -126,6 +126,14 @@ func (vm *VM) run() InterpretResult {
 				return INTERPRET_RUNTIME_ERROR
 			}
 			vm.pushStack(val)
+		case OP_SET_GLOBAL:
+			name := vm.readString()
+			_, ok := vm.globals[name]
+			if !ok {
+				vm.runtimeError("Undefined variable '%s'.", name.Characters)
+				return INTERPRET_RUNTIME_ERROR
+			}
+			vm.globals[name] = vm.peek(0)
 		}
 	}
 }

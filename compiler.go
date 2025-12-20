@@ -6,7 +6,7 @@ import (
 )
 
 type Precedence int
-type ParseFn func()
+type ParseFn func(canAssign bool)
 
 const DEBUG_PRINT_CODE = true
 
@@ -157,20 +157,25 @@ func (c *Compiler) parsePrecedence(prec Precedence) {
 		c.error("Expect expression.")
 		return
 	}
-	prefixRule()
+	canAssign := prec <= PREC_ASSIGNMENT
+	prefixRule(canAssign)
 	for prec <= c.getRule(c.Ps.current.Type).precedence {
 		c.advance()
 		infixRule := c.getRule(c.Ps.previous.Type).infix
-		infixRule()
+		infixRule(canAssign)
+	}
+
+	if canAssign && c.match(TOKEN_EQUAL) {
+		c.error("Invalid assignment target.")
 	}
 }
 
-func (c *Compiler) number() {
+func (c *Compiler) number(canAssign bool) {
 	val, _ := strconv.ParseFloat(c.Ps.previous.Lexeme, 64)
 	c.emitConstant(NumberVal(val))
 }
 
-func (c *Compiler) literal() {
+func (c *Compiler) literal(canAssign bool) {
 	switch c.Ps.previous.Type {
 	case TOKEN_NIL:
 		c.emitByte(OP_NIL)
@@ -181,7 +186,7 @@ func (c *Compiler) literal() {
 	}
 }
 
-func (c *Compiler) binary() {
+func (c *Compiler) binary(canAssign bool) {
 	opType := c.Ps.previous.Type
 	rule := c.getRule(opType)
 	c.parsePrecedence(rule.precedence + 1)
@@ -212,16 +217,16 @@ func (c *Compiler) binary() {
 	}
 }
 
-func (c *Compiler) str() {
+func (c *Compiler) str(canAssign bool) {
 	c.emitConstant(ObjVal{Object: CreateStringObj(c.Ps.previous.Lexeme[1 : len(c.Ps.previous.Lexeme)-1])})
 }
 
-func (c *Compiler) grouping() {
+func (c *Compiler) grouping(canAssign bool) {
 	c.expression()
 	c.consume(TOKEN_RIGHT_PAREN, "Expected ')' after expression ")
 }
 
-func (c *Compiler) unary() {
+func (c *Compiler) unary(canAssign bool) {
 	operatorType := c.Ps.previous.Type
 	c.parsePrecedence(PREC_UNARY)
 	switch operatorType {
@@ -234,13 +239,18 @@ func (c *Compiler) unary() {
 	}
 }
 
-func (c *Compiler) variable() {
-	c.namedVariable(c.Ps.previous)
+func (c *Compiler) variable(canAssign bool) {
+	c.namedVariable(c.Ps.previous, canAssign)
 }
 
-func (c *Compiler) namedVariable(name Token) {
+func (c *Compiler) namedVariable(name Token, canAssign bool) {
 	arg := c.identifierConstant(name)
-	c.emitBytes(OP_GET_GLOBAL, arg)
+	if canAssign && c.match(TOKEN_EQUAL) {
+		c.expression()
+		c.emitBytes(OP_SET_GLOBAL, arg)
+	} else {
+		c.emitBytes(OP_GET_GLOBAL, arg)
+	}
 }
 
 func (c *Compiler) emitConstant(val Value) {
