@@ -53,6 +53,8 @@ func disassembleInstruction(c *Chunk, offset int) int {
 		return simpleInstruction("OP_LESS", offset)
 	case OP_PRINT:
 		return simpleInstruction("OP_PRINT", offset)
+	case OP_GET_GLOBAL:
+		return constantInstruction("OP_GET_GLOBAL", offset, c)
 	default:
 		fmt.Printf("Unknown opcode %d\n", inst)
 		return offset + 1

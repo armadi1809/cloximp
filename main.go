@@ -40,6 +40,6 @@ func runFile(path string) {
 	if err != nil {
 		log.Panicf("An error occurred while reading source file %v", err)
 	}
-	compiler := &Compiler{}
-	compiler.compile(string(source))
+	vm := &VM{}
+	vm.Interpret(string(source))
 }

@@ -188,7 +188,9 @@ func (sc *Scanner) scanNumber() Token {
 }
 
 func (sc *Scanner) scanIdentifier() Token {
+
 	for isAlpha(sc.getCharAtPos(sc.Current)) || isDigit(sc.getCharAtPos(sc.Current)) {
+
 		sc.advance()
 	}
 	iden := sc.Source[sc.Start:sc.Current]
@@ -267,5 +269,5 @@ func isDigit(c int32) bool {
 }
 
 func isAlpha(c int32) bool {
-	return (c > 'a' && c < 'z') || (c > 'A' && c < 'Z') || c == '_'
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
 }

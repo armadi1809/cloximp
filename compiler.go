@@ -234,6 +234,15 @@ func (c *Compiler) unary() {
 	}
 }
 
+func (c *Compiler) variable() {
+	c.namedVariable(c.Ps.previous)
+}
+
+func (c *Compiler) namedVariable(name Token) {
+	arg := c.identifierConstant(name)
+	c.emitBytes(OP_GET_GLOBAL, arg)
+}
+
 func (c *Compiler) emitConstant(val Value) {
 	c.emitBytes(OP_CONSTANT, c.makeConstant(val))
 }
@@ -337,7 +346,7 @@ func (c *Compiler) initRules() {
 		TOKEN_GREATER_EQUAL: {nil, c.binary, PREC_COMPARISON},
 		TOKEN_LESS:          {nil, c.binary, PREC_COMPARISON},
 		TOKEN_LESS_EQUAL:    {nil, c.binary, PREC_COMPARISON},
-		TOKEN_IDENTIFIER:    {nil, nil, PREC_NONE},
+		TOKEN_IDENTIFIER:    {c.variable, nil, PREC_NONE},
 		TOKEN_STRING:        {c.str, nil, PREC_NONE},
 		TOKEN_NUMBER:        {c.number, nil, PREC_NONE},
 		TOKEN_AND:           {nil, nil, PREC_NONE},

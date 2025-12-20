@@ -118,6 +118,14 @@ func (vm *VM) run() InterpretResult {
 		case OP_PRINT:
 			vm.popStack().Print()
 			fmt.Print("\n")
+		case OP_GET_GLOBAL:
+			name := vm.readString()
+			val, ok := vm.globals[name]
+			if !ok {
+				vm.runtimeError("Undefined variable '%s'.", name.Characters)
+				return INTERPRET_RUNTIME_ERROR
+			}
+			vm.pushStack(val)
 		}
 	}
 }
