@@ -294,7 +294,6 @@ func (c *Compiler) consume(tokT TokenType, message string) {
 		c.advance()
 		return
 	}
-
 	c.errorAtCurrent(message)
 }
 

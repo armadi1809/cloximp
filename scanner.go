@@ -190,7 +190,6 @@ func (sc *Scanner) scanNumber() Token {
 func (sc *Scanner) scanIdentifier() Token {
 
 	for isAlpha(sc.getCharAtPos(sc.Current)) || isDigit(sc.getCharAtPos(sc.Current)) {
-
 		sc.advance()
 	}
 	iden := sc.Source[sc.Start:sc.Current]
@@ -239,21 +238,25 @@ func (sc *Scanner) match(expected int32) bool {
 }
 
 func (sc *Scanner) skipWhitespaces() {
-	c := sc.getCharAtPos(sc.Current)
-	switch c {
-	case ' ', '\t', 'r':
-		sc.advance()
-	case '\n':
-		sc.Line++
-		sc.advance()
-	case '/':
-		if sc.getCharAtPos(sc.Current+1) == '/' {
-			for sc.getCharAtPos(sc.Current) != '\n' {
-				sc.advance()
+	for {
+		c := sc.getCharAtPos(sc.Current)
+		switch c {
+		case ' ', '\t', '\r':
+			sc.advance()
+		case '\n':
+			sc.Line++
+			sc.advance()
+		case '/':
+			if sc.getCharAtPos(sc.Current+1) == '/' {
+				for !sc.isAtEnd() && sc.getCharAtPos(sc.Current) != '\n' {
+					sc.advance()
+				}
+			} else {
+				return
 			}
+		default:
+			return
 		}
-	default:
-		return
 	}
 }
 
