@@ -31,11 +31,19 @@ type Parser struct {
 	panicMode bool
 }
 
+type Local struct {
+	name  Token
+	depth int
+}
+
 type Compiler struct {
-	Sc    *Scanner
-	Chunk *Chunk
-	Ps    *Parser
-	rules map[TokenType]ParseRule
+	Sc         *Scanner
+	Chunk      *Chunk
+	Ps         *Parser
+	rules      map[TokenType]ParseRule
+	Locals     []Local
+	LocalCount int
+	ScopeDepth int
 }
 
 type ParseRule struct {
@@ -80,11 +88,47 @@ func (c *Compiler) varDeclaration() {
 }
 
 func (c *Compiler) defineVariable(global byte) {
+	if c.ScopeDepth > 0 {
+		return
+	}
 	c.emitBytes(OP_DEFINE_GLOBAL, global)
+}
+
+func (c *Compiler) declareVariable() {
+	if c.ScopeDepth == 0 {
+		return
+	}
+	name := c.Ps.previous
+	for i := c.LocalCount; i >= 0; i-- {
+		local := c.Locals[i]
+		if local.depth != -1 && local.depth < c.ScopeDepth {
+			break
+		}
+		if identifiersEqual(name, local.name) {
+			c.error("Already a variable with this name in this scope.")
+		}
+	}
+	c.addLocal(name)
+
+}
+
+func (c *Compiler) addLocal(name Token) {
+	if c.LocalCount == 255 {
+		c.error("Too many local variables in function.")
+		return
+	}
+	local := Local{}
+	local.depth = c.ScopeDepth
+	local.name = name
+	c.Locals = append(c.Locals, local)
 }
 
 func (c *Compiler) parseVariable(errorMessage string) byte {
 	c.consume(TOKEN_IDENTIFIER, errorMessage)
+	c.declareVariable()
+	if c.ScopeDepth > 0 {
+		return 0
+	}
 	return c.identifierConstant(c.Ps.previous)
 }
 
@@ -117,9 +161,28 @@ func (c *Compiler) synchronize() {
 func (c *Compiler) statement() {
 	if c.match(TOKEN_PRINT) {
 		c.printStatement()
+	} else if c.match(TOKEN_LEFT_BRACE) {
+		c.beginBlock()
+		c.block()
+		c.endBlock()
 	} else {
 		c.expressionStatement()
 	}
+}
+
+func (c *Compiler) block() {
+	for !c.check(TOKEN_RIGHT_BRACE) && !c.check(TOKEN_EOF) {
+		c.declaration()
+	}
+	c.consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.")
+}
+
+func (c *Compiler) beginBlock() {
+	c.ScopeDepth += 1
+}
+
+func (c *Compiler) endBlock() {
+	c.ScopeDepth -= 1
 }
 
 func (c *Compiler) match(tokType TokenType) bool {
@@ -381,4 +444,8 @@ func (c *Compiler) initRules() {
 
 func (c *Compiler) getRule(tok TokenType) ParseRule {
 	return c.rules[tok]
+}
+
+func identifiersEqual(a Token, b Token) bool {
+	return a.Lexeme == b.Lexeme
 }

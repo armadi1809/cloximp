@@ -47,6 +47,9 @@ func (vm *VM) initCompiler() {
 			panicMode: false,
 			hadError:  false,
 		},
+		Locals:     []Local{},
+		ScopeDepth: 0,
+		LocalCount: 0,
 	}
 }
 func (vm *VM) run() InterpretResult {
