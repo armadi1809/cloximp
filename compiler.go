@@ -89,9 +89,15 @@ func (c *Compiler) varDeclaration() {
 
 func (c *Compiler) defineVariable(global byte) {
 	if c.ScopeDepth > 0 {
+		c.markInitialized()
 		return
 	}
 	c.emitBytes(OP_DEFINE_GLOBAL, global)
+}
+
+func (c *Compiler) markInitialized() {
+	c.Locals[c.LocalCount-1].depth =
+		c.ScopeDepth
 }
 
 func (c *Compiler) declareVariable() {
@@ -118,7 +124,7 @@ func (c *Compiler) addLocal(name Token) {
 		return
 	}
 	local := Local{}
-	local.depth = c.ScopeDepth
+	local.depth = -1
 	local.name = name
 	c.Locals = append(c.Locals, local)
 }
@@ -331,6 +337,9 @@ func (c *Compiler) resolveLocal(name Token) int {
 	for i := c.LocalCount - 1; i >= 0; i-- {
 		local := c.Locals[i]
 		if identifiersEqual(name, local.name) {
+			if local.depth == -1 {
+				c.error("Can't read local variable in its own initializer.")
+			}
 			return i
 		}
 	}
