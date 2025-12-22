@@ -129,6 +129,12 @@ func (vm *VM) run() InterpretResult {
 				return INTERPRET_RUNTIME_ERROR
 			}
 			vm.pushStack(val)
+		case OP_GET_LOCAL:
+			slot := vm.readByte()
+			vm.pushStack(vm.stack[slot])
+		case OP_SET_LOCAL:
+			slot := vm.readByte()
+			vm.stack[slot] = vm.peek(0)
 		case OP_SET_GLOBAL:
 			name := vm.readString()
 			_, ok := vm.globals[name]
