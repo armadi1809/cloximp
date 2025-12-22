@@ -307,13 +307,34 @@ func (c *Compiler) variable(canAssign bool) {
 }
 
 func (c *Compiler) namedVariable(name Token, canAssign bool) {
-	arg := c.identifierConstant(name)
+	arg := c.resolveLocal(name)
+	var getOp, setOp byte
+
+	if arg != -1 {
+		getOp = OP_GET_LOCAL
+		setOp = OP_SET_LOCAL
+	} else {
+		arg = int(c.identifierConstant(name))
+		getOp = OP_GET_GLOBAL
+		setOp = OP_SET_GLOBAL
+	}
+
 	if canAssign && c.match(TOKEN_EQUAL) {
 		c.expression()
-		c.emitBytes(OP_SET_GLOBAL, arg)
+		c.emitBytes(setOp, byte(arg))
 	} else {
-		c.emitBytes(OP_GET_GLOBAL, arg)
+		c.emitBytes(getOp, byte(arg))
 	}
+}
+
+func (c *Compiler) resolveLocal(name Token) int {
+	for i := c.LocalCount - 1; i >= 0; i-- {
+		local := c.Locals[i]
+		if identifiersEqual(name, local.name) {
+			return i
+		}
+	}
+	return -1
 }
 
 func (c *Compiler) emitConstant(val Value) {
