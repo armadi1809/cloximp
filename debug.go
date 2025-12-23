@@ -91,8 +91,8 @@ func constantInstruction(name string, offset int, c *Chunk) int {
 }
 
 func jumpInstruction(name string, sign int, offset int, c *Chunk) int {
-	jump := (uint16)(c.Code[offset+1] << 8)
-	jump |= (uint16)(c.Code[offset+2])
+	jump := (uint16(c.Code[offset+1]) << 8)
+	jump |= uint16(c.Code[offset+2])
 	fmt.Printf("%-16s %4d -> %d\n", name, offset,
 		offset+3+sign*(int(jump)))
 	return offset + 3
