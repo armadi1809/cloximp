@@ -171,7 +171,7 @@ func (c *Compiler) statement() {
 	} else if c.match(TOKEN_IF) {
 		c.ifStatement()
 	} else if c.match(TOKEN_WHILE) {
-
+		c.whileStatement()
 	} else if c.match(TOKEN_LEFT_BRACE) {
 		c.beginBlock()
 		c.block()
