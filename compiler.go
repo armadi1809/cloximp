@@ -172,6 +172,8 @@ func (c *Compiler) statement() {
 		c.ifStatement()
 	} else if c.match(TOKEN_WHILE) {
 		c.whileStatement()
+	} else if c.match(TOKEN_FOR) {
+		c.forStatement()
 	} else if c.match(TOKEN_LEFT_BRACE) {
 		c.beginBlock()
 		c.block()
@@ -179,6 +181,49 @@ func (c *Compiler) statement() {
 	} else {
 		c.expressionStatement()
 	}
+}
+
+func (c *Compiler) forStatement() {
+	c.beginBlock()
+	c.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.")
+	if c.match(TOKEN_SEMICOLON) {
+		// No init, just keep going
+	} else if c.match(TOKEN_VAR) {
+		c.varDeclaration()
+	} else {
+		c.expressionStatement()
+	}
+
+	loopStart := c.Chunk.Count()
+	exitJump := -1
+	if !c.match(TOKEN_SEMICOLON) {
+		c.expression()
+		c.consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.")
+
+		exitJump = c.emitJump(OP_JUMP_IF_FALSE)
+		c.emitByte(OP_POP)
+
+	}
+	if !c.match(TOKEN_RIGHT_PAREN) {
+		bodyJump := c.emitJump(OP_JUMP)
+		incrementStart := c.Chunk.Count()
+		c.expression()
+		c.emitByte(OP_POP)
+		c.consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.")
+
+		c.emitLoop(loopStart)
+		loopStart = incrementStart
+		c.patchJump(bodyJump)
+	}
+
+	c.statement()
+	c.emitLoop(loopStart)
+
+	if exitJump != -1 {
+		c.patchJump(exitJump)
+		c.emitByte(OP_POP) // Condition.
+	}
+	c.endBlock()
 }
 
 func (c *Compiler) whileStatement() {
