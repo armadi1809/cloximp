@@ -294,6 +294,25 @@ func (c *Compiler) literal(canAssign bool) {
 	}
 }
 
+func (c *Compiler) and_(canAssign bool) {
+	endJump := c.emitJump(OP_JUMP_IF_FALSE)
+	c.emitByte(OP_POP)
+	c.parsePrecedence(PREC_AND)
+
+	c.patchJump(endJump)
+}
+
+func (c *Compiler) or_(canAssign bool) {
+	elseJump := c.emitJump(OP_JUMP_IF_FALSE)
+	endJump := c.emitJump(OP_JUMP)
+
+	c.patchJump(elseJump)
+	c.emitByte(OP_POP)
+
+	c.parsePrecedence(PREC_OR)
+	c.patchJump(endJump)
+}
+
 func (c *Compiler) binary(canAssign bool) {
 	opType := c.Ps.previous.Type
 	rule := c.getRule(opType)
@@ -490,7 +509,7 @@ func (c *Compiler) initRules() {
 		TOKEN_IDENTIFIER:    {c.variable, nil, PREC_NONE},
 		TOKEN_STRING:        {c.str, nil, PREC_NONE},
 		TOKEN_NUMBER:        {c.number, nil, PREC_NONE},
-		TOKEN_AND:           {nil, nil, PREC_NONE},
+		TOKEN_AND:           {nil, c.and_, PREC_NONE},
 		TOKEN_CLASS:         {nil, nil, PREC_NONE},
 		TOKEN_ELSE:          {nil, nil, PREC_NONE},
 		TOKEN_FALSE:         {c.literal, nil, PREC_NONE},
@@ -498,7 +517,7 @@ func (c *Compiler) initRules() {
 		TOKEN_FUN:           {nil, nil, PREC_NONE},
 		TOKEN_IF:            {nil, nil, PREC_NONE},
 		TOKEN_NIL:           {c.literal, nil, PREC_NONE},
-		TOKEN_OR:            {nil, nil, PREC_NONE},
+		TOKEN_OR:            {nil, c.or_, PREC_NONE},
 		TOKEN_PRINT:         {nil, nil, PREC_NONE},
 		TOKEN_RETURN:        {nil, nil, PREC_NONE},
 		TOKEN_SUPER:         {nil, nil, PREC_NONE},
