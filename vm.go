@@ -151,6 +151,9 @@ func (vm *VM) run() InterpretResult {
 		case OP_JUMP:
 			offset := vm.readShort()
 			vm.ip += offset
+		case OP_LOOP:
+			offset := vm.readShort()
+			vm.ip -= offset
 		}
 	}
 }

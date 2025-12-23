@@ -170,6 +170,8 @@ func (c *Compiler) statement() {
 		c.printStatement()
 	} else if c.match(TOKEN_IF) {
 		c.ifStatement()
+	} else if c.match(TOKEN_WHILE) {
+
 	} else if c.match(TOKEN_LEFT_BRACE) {
 		c.beginBlock()
 		c.block()
@@ -177,6 +179,31 @@ func (c *Compiler) statement() {
 	} else {
 		c.expressionStatement()
 	}
+}
+
+func (c *Compiler) whileStatement() {
+	loopStart := c.Chunk.Count()
+	c.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.")
+	c.expression()
+	c.consume(TOKEN_RIGHT_PAREN, "Expect '(' after condition.")
+
+	exitJump := c.emitJump(OP_JUMP_IF_FALSE)
+	c.emitByte(OP_POP)
+	c.statement()
+	c.emitLoop(loopStart)
+	c.patchJump(exitJump)
+	c.emitByte(OP_POP)
+}
+
+func (c *Compiler) emitLoop(loopStart int) {
+	c.emitByte(OP_LOOP)
+	offset := c.Chunk.Count() - loopStart + 2
+	if offset > math.MaxUint16 {
+		c.error("Loop body too large.")
+	}
+	c.emitByte(byte((offset >> 8) & 0xff))
+	c.emitByte(byte(offset & 0xff))
+
 }
 
 func (c *Compiler) ifStatement() {
