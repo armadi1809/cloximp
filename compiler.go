@@ -167,6 +167,8 @@ func (c *Compiler) synchronize() {
 func (c *Compiler) statement() {
 	if c.match(TOKEN_PRINT) {
 		c.printStatement()
+	} else if c.match(TOKEN_IF) {
+		c.ifStatement()
 	} else if c.match(TOKEN_LEFT_BRACE) {
 		c.beginBlock()
 		c.block()
@@ -174,6 +176,29 @@ func (c *Compiler) statement() {
 	} else {
 		c.expressionStatement()
 	}
+}
+
+func (c *Compiler) ifStatement() {
+	c.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.")
+	c.expression()
+	c.consume(TOKEN_RIGHT_PAREN, "Expect '(' after condition.")
+
+	thenJump := c.emitJump(OP_JUMP_IF_FALSE)
+
+	c.statement()
+	c.patchJump(thenJump)
+}
+
+func (c *Compiler) patchJump(offset int) {
+
+}
+
+func (c *Compiler) emitJump(instruction byte) int {
+	c.emitByte(instruction)
+	c.emitByte(0xff)
+	c.emitByte(0xff)
+
+	return c.Chunk.Count() - 2
 }
 
 func (c *Compiler) block() {

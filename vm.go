@@ -143,8 +143,21 @@ func (vm *VM) run() InterpretResult {
 				return INTERPRET_RUNTIME_ERROR
 			}
 			vm.globals[name] = vm.peek(0)
+		case OP_JUMP_IF_FALSE:
+			offset := vm.readShort()
+			if isFalsey(vm.peek(0)) {
+				vm.ip += offset
+			}
 		}
 	}
+}
+
+func (vm *VM) readShort() int {
+	vm.ip += 2
+	high := uint16(vm.compiler.Chunk.Code[vm.ip-2])
+	low := uint16(vm.compiler.Chunk.Code[vm.ip-1])
+
+	return int((high << 8) | low)
 }
 
 func (vm *VM) performBinaryOp(operation byte) bool {

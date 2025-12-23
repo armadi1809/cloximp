@@ -22,6 +22,7 @@ const (
 	OP_GREATER
 	OP_LESS
 	OP_PRINT
+	OP_JUMP_IF_FALSE
 )
 
 type Chunk struct {
