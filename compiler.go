@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -184,13 +185,26 @@ func (c *Compiler) ifStatement() {
 	c.consume(TOKEN_RIGHT_PAREN, "Expect '(' after condition.")
 
 	thenJump := c.emitJump(OP_JUMP_IF_FALSE)
+	c.emitByte(OP_POP)
 
 	c.statement()
+	elseJump := c.emitJump(OP_JUMP)
+
 	c.patchJump(thenJump)
+	c.emitByte(OP_POP)
+	if c.match(TOKEN_ELSE) {
+		c.statement()
+	}
+	c.patchJump(elseJump)
 }
 
 func (c *Compiler) patchJump(offset int) {
-
+	jump := c.Chunk.Count() - offset - 2
+	if jump > math.MaxUint16 {
+		c.error("Too many instructions to jump over")
+	}
+	c.Chunk.Code[offset] = byte((jump >> 8) & 0xff)
+	c.Chunk.Code[offset+1] = byte(jump & 0xff)
 }
 
 func (c *Compiler) emitJump(instruction byte) int {

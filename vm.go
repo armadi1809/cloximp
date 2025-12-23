@@ -148,6 +148,9 @@ func (vm *VM) run() InterpretResult {
 			if isFalsey(vm.peek(0)) {
 				vm.ip += offset
 			}
+		case OP_JUMP:
+			offset := vm.readShort()
+			vm.ip += offset
 		}
 	}
 }

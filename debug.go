@@ -59,6 +59,10 @@ func disassembleInstruction(c *Chunk, offset int) int {
 		return byteInstruction("OP_GET_LOCAL", offset, c)
 	case OP_SET_LOCAL:
 		return byteInstruction("OP_SET_LOCAL", offset, c)
+	case OP_JUMP_IF_FALSE:
+		return jumpInstruction("OP_JUMP_IF_FALSE", 1, offset, c)
+	case OP_JUMP:
+		return jumpInstruction("OP_JUMP", 1, offset, c)
 	default:
 		fmt.Printf("Unknown opcode %d\n", inst)
 		return offset + 1
@@ -84,4 +88,12 @@ func constantInstruction(name string, offset int, c *Chunk) int {
 
 	fmt.Printf("'\n")
 	return offset + 2
+}
+
+func jumpInstruction(name string, sign int, offset int, c *Chunk) int {
+	jump := (uint16)(c.Code[offset+1] << 8)
+	jump |= (uint16)(c.Code[offset+2])
+	fmt.Printf("%-16s %4d -> %d\n", name, offset,
+		offset+3+sign*(int(jump)))
+	return offset + 3
 }
