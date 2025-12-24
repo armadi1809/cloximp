@@ -111,6 +111,9 @@ func (ob ObjVal) Print() {
 	switch ob.Object.Type() {
 	case OBJ_STRING:
 		fmt.Print(AsLiteralString(ob))
+	case OBJ_FUNCTION:
+		funcObj := AsFunc(ob)
+		fmt.Printf("<fn %s>", funcObj.name.Characters)
 	}
 }
 
@@ -132,6 +135,10 @@ func isObj(v Value) bool {
 
 func IsString(val Value) bool {
 	return IsObjtype(val, OBJ_STRING)
+}
+
+func IsFunction(val Value) bool {
+	return IsObjtype(val, OBJ_FUNCTION)
 }
 
 func valuesEqual(a, b Value) bool {
