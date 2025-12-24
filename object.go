@@ -56,8 +56,8 @@ func CreateStringObj(literal string) ObjString {
 	return ObjString{Length: len(literal), Characters: literal}
 }
 
-func NewFunction() ObjFunction {
-	return ObjFunction{
+func NewFunction() *ObjFunction {
+	return &ObjFunction{
 		arity: 0,
 		name:  nil,
 		chunk: Chunk{},

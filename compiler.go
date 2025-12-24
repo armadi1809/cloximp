@@ -7,6 +7,7 @@ import (
 )
 
 type Precedence int
+type FunctionType int
 type ParseFn func(canAssign bool)
 
 const DEBUG_PRINT_CODE = true
@@ -25,6 +26,11 @@ const (
 	PREC_PRIMARY
 )
 
+const (
+	TYPE_FUNCTION = iota
+	TYPE_SCRIPT
+)
+
 type Parser struct {
 	current   Token
 	previous  Token
@@ -39,7 +45,8 @@ type Local struct {
 
 type Compiler struct {
 	Sc         *Scanner
-	Chunk      *Chunk
+	Function   *ObjFunction
+	Type       FunctionType
 	Ps         *Parser
 	rules      map[TokenType]ParseRule
 	Locals     []Local
@@ -53,15 +60,20 @@ type ParseRule struct {
 	precedence Precedence
 }
 
-func (c *Compiler) compile(source string) bool {
+func (c *Compiler) compile(source string) *ObjFunction {
 	c.Sc.initScanner(source)
 	c.initRules()
 	c.advance()
 	for !c.match(TOKEN_EOF) {
 		c.declaration()
 	}
-	c.endCompiler()
-	return !c.Ps.hadError
+	function := c.endCompiler()
+
+	if !c.Ps.hadError {
+		return nil
+	}
+
+	return function
 }
 
 func (c *Compiler) declaration() {
@@ -194,7 +206,7 @@ func (c *Compiler) forStatement() {
 		c.expressionStatement()
 	}
 
-	loopStart := c.Chunk.Count()
+	loopStart := c.Function.chunk.Count()
 	exitJump := -1
 	if !c.match(TOKEN_SEMICOLON) {
 		c.expression()
@@ -206,7 +218,7 @@ func (c *Compiler) forStatement() {
 	}
 	if !c.match(TOKEN_RIGHT_PAREN) {
 		bodyJump := c.emitJump(OP_JUMP)
-		incrementStart := c.Chunk.Count()
+		incrementStart := c.Function.chunk.Count()
 		c.expression()
 		c.emitByte(OP_POP)
 		c.consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.")
@@ -227,7 +239,7 @@ func (c *Compiler) forStatement() {
 }
 
 func (c *Compiler) whileStatement() {
-	loopStart := c.Chunk.Count()
+	loopStart := c.Function.chunk.Count()
 	c.consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.")
 	c.expression()
 	c.consume(TOKEN_RIGHT_PAREN, "Expect '(' after condition.")
@@ -242,7 +254,7 @@ func (c *Compiler) whileStatement() {
 
 func (c *Compiler) emitLoop(loopStart int) {
 	c.emitByte(OP_LOOP)
-	offset := c.Chunk.Count() - loopStart + 2
+	offset := c.Function.chunk.Count() - loopStart + 2
 	if offset > math.MaxUint16 {
 		c.error("Loop body too large.")
 	}
@@ -271,12 +283,12 @@ func (c *Compiler) ifStatement() {
 }
 
 func (c *Compiler) patchJump(offset int) {
-	jump := c.Chunk.Count() - offset - 2
+	jump := c.Function.chunk.Count() - offset - 2
 	if jump > math.MaxUint16 {
 		c.error("Too many instructions to jump over")
 	}
-	c.Chunk.Code[offset] = byte((jump >> 8) & 0xff)
-	c.Chunk.Code[offset+1] = byte(jump & 0xff)
+	c.Function.chunk.Code[offset] = byte((jump >> 8) & 0xff)
+	c.Function.chunk.Code[offset+1] = byte(jump & 0xff)
 }
 
 func (c *Compiler) emitJump(instruction byte) int {
@@ -284,7 +296,7 @@ func (c *Compiler) emitJump(instruction byte) int {
 	c.emitByte(0xff)
 	c.emitByte(0xff)
 
-	return c.Chunk.Count() - 2
+	return c.Function.chunk.Count() - 2
 }
 
 func (c *Compiler) block() {
@@ -481,7 +493,7 @@ func (c *Compiler) emitConstant(val Value) {
 }
 
 func (c *Compiler) makeConstant(val Value) byte {
-	constant := c.Chunk.AddConstant(val)
+	constant := c.Function.chunk.AddConstant(val)
 	if constant > 255 {
 		c.error("Too many constants in one chunk")
 		return 0
@@ -491,16 +503,24 @@ func (c *Compiler) makeConstant(val Value) byte {
 }
 
 func (c *Compiler) emitByte(b byte) {
-	c.Chunk.Write(b, c.Ps.previous.Line)
+	c.Function.chunk.Write(b, c.Ps.previous.Line)
 }
 
-func (c *Compiler) endCompiler() {
+func (c *Compiler) endCompiler() *ObjFunction {
+	function := c.Function
+	c.emitReturn()
 	if DEBUG_PRINT_CODE {
 		if !c.Ps.hadError {
-			DisassembleChunk(c.Chunk, "code")
+			funcName := "<script>"
+			if function.name != nil {
+				funcName = function.name.Characters
+			}
+			DisassembleChunk(&c.Function.chunk, funcName)
 		}
 	}
-	c.emitReturn()
+
+	return function
+
 }
 
 func (c *Compiler) emitReturn() {

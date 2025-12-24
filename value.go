@@ -113,6 +113,10 @@ func (ob ObjVal) Print() {
 		fmt.Print(AsLiteralString(ob))
 	case OBJ_FUNCTION:
 		funcObj := AsFunc(ob)
+		if funcObj.name == nil {
+			fmt.Printf("<script>")
+			return
+		}
 		fmt.Printf("<fn %s>", funcObj.name.Characters)
 	}
 }

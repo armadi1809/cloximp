@@ -8,6 +8,7 @@ import (
 type InterpretResult byte
 
 const DEBUG_TRACE_EXECUTION = true
+const FRAME_MAX = 64
 
 const (
 	INTERPRET_OK = iota
@@ -15,44 +16,65 @@ const (
 	INTERPRET_RUNTIME_ERROR
 )
 
-type VM struct {
+type CallFrame struct {
+	function *ObjFunction
 	ip       int
-	stack    []Value
-	compiler *Compiler
-	globals  map[ObjString]Value
+	slots    int
+}
+
+type VM struct {
+	frames     []CallFrame
+	frameCount int
+	stack      []Value
+	compiler   *Compiler
+	globals    map[ObjString]Value
 }
 
 func (vm *VM) initVM() {
-	vm.initCompiler()
-	vm.ip = 0
+	vm.initCompiler(TYPE_SCRIPT)
 	vm.resetStack()
 	vm.globals = make(map[ObjString]Value)
 }
 
 func (vm *VM) Interpret(source string) InterpretResult {
 	vm.initVM()
-
-	if !vm.compiler.compile(source) {
+	function := vm.compiler.compile(source)
+	if function == nil {
 		return INTERPRET_COMPILE_ERROR
 	}
+	vm.pushStack(ObjVal{Object: function})
+	frame := CallFrame{
+		function: function,
+		ip:       0,
+		slots:    len(vm.stack) - 1,
+	}
+	vm.frames = append(vm.frames, frame)
 
 	return vm.run()
 }
 
-func (vm *VM) initCompiler() {
+func (vm *VM) initCompiler(funct FunctionType) {
+	local := Local{
+		depth: 0,
+		name: Token{
+			Lexeme: "",
+		},
+	}
 	vm.compiler = &Compiler{
-		Sc:    &Scanner{},
-		Chunk: &Chunk{},
+		Sc:       &Scanner{},
+		Function: NewFunction(),
+		Type:     funct,
 		Ps: &Parser{
 			panicMode: false,
 			hadError:  false,
 		},
-		Locals:     []Local{},
+		Locals:     []Local{local},
 		ScopeDepth: 0,
-		LocalCount: 0,
+		LocalCount: 1,
 	}
 }
 func (vm *VM) run() InterpretResult {
+	frame := vm.getCurrentFrame()
 	for {
 		if DEBUG_TRACE_EXECUTION {
 			fmt.Print("          ")
@@ -62,7 +84,7 @@ func (vm *VM) run() InterpretResult {
 				fmt.Print(" ]")
 			}
 			fmt.Println()
-			disassembleInstruction(vm.compiler.Chunk, vm.ip)
+			disassembleInstruction(&frame.function.chunk, frame.ip)
 		}
 		inst := vm.readByte()
 		switch inst {
@@ -131,10 +153,10 @@ func (vm *VM) run() InterpretResult {
 			vm.pushStack(val)
 		case OP_GET_LOCAL:
 			slot := vm.readByte()
-			vm.pushStack(vm.stack[slot])
+			vm.pushStack(vm.stack[frame.slots+int(slot)])
 		case OP_SET_LOCAL:
 			slot := vm.readByte()
-			vm.stack[slot] = vm.peek(0)
+			vm.stack[frame.slots+int(slot)] = vm.peek(0)
 		case OP_SET_GLOBAL:
 			name := vm.readString()
 			_, ok := vm.globals[name]
@@ -146,22 +168,23 @@ func (vm *VM) run() InterpretResult {
 		case OP_JUMP_IF_FALSE:
 			offset := vm.readShort()
 			if isFalsey(vm.peek(0)) {
-				vm.ip += offset
+				frame.ip += offset
 			}
 		case OP_JUMP:
 			offset := vm.readShort()
-			vm.ip += offset
+			frame.ip += offset
 		case OP_LOOP:
 			offset := vm.readShort()
-			vm.ip -= offset
+			frame.ip -= offset
 		}
 	}
 }
 
 func (vm *VM) readShort() int {
-	vm.ip += 2
-	high := uint16(vm.compiler.Chunk.Code[vm.ip-2])
-	low := uint16(vm.compiler.Chunk.Code[vm.ip-1])
+	frame := vm.getCurrentFrame()
+	frame.ip += 2
+	high := uint16(frame.function.chunk.Code[frame.ip-2])
+	low := uint16(frame.function.chunk.Code[frame.ip-1])
 
 	return int((high << 8) | low)
 }
@@ -207,13 +230,15 @@ func (vm *VM) performBinaryOp(operation byte) bool {
 }
 
 func (vm *VM) readByte() byte {
-	inst := vm.compiler.Chunk.Code[vm.ip]
-	vm.ip += 1
+	frame := vm.getCurrentFrame()
+	inst := frame.function.chunk.Code[frame.ip]
+	frame.ip += 1
 	return inst
 }
 
 func (vm *VM) readConstant() Value {
-	return vm.compiler.Chunk.Constants.values[vm.readByte()]
+	frame := vm.getCurrentFrame()
+	return frame.function.chunk.Constants.values[vm.readByte()]
 }
 
 func (vm *VM) readString() ObjString {
@@ -222,6 +247,8 @@ func (vm *VM) readString() ObjString {
 
 func (vm *VM) resetStack() {
 	vm.stack = []Value{}
+	vm.frameCount = 0
+	vm.frames = []CallFrame{}
 }
 
 func (vm *VM) pushStack(val Value) {
@@ -245,9 +272,14 @@ func isFalsey(v Value) bool {
 }
 
 func (vm *VM) runtimeError(format string, a ...any) {
+	frame := vm.getCurrentFrame()
 	fmt.Fprintf(os.Stderr, format, a...)
 	fmt.Fprintln(os.Stderr)
-	instruction := vm.ip - 1
-	line := vm.compiler.Chunk.lines[instruction]
+	instruction := frame.ip - 1
+	line := frame.function.chunk.lines[instruction]
 	fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
+}
+
+func (vm *VM) getCurrentFrame() *CallFrame {
+	return &vm.frames[vm.frameCount-1]
 }
