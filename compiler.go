@@ -69,7 +69,7 @@ func (c *Compiler) compile(source string) *ObjFunction {
 	}
 	function := c.endCompiler()
 
-	if !c.Ps.hadError {
+	if c.Ps.hadError {
 		return nil
 	}
 

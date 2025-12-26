@@ -34,6 +34,7 @@ func (vm *VM) initVM() {
 	vm.initCompiler(TYPE_SCRIPT)
 	vm.resetStack()
 	vm.globals = make(map[ObjString]Value)
+	vm.frameCount = 0
 }
 
 func (vm *VM) Interpret(source string) InterpretResult {
@@ -42,13 +43,14 @@ func (vm *VM) Interpret(source string) InterpretResult {
 	if function == nil {
 		return INTERPRET_COMPILE_ERROR
 	}
-	vm.pushStack(ObjVal{Object: function})
+	vm.pushStack(ObjVal{Object: *function})
 	frame := CallFrame{
 		function: function,
 		ip:       0,
 		slots:    len(vm.stack) - 1,
 	}
 	vm.frames = append(vm.frames, frame)
+	vm.frameCount++
 
 	return vm.run()
 }
@@ -141,7 +143,8 @@ func (vm *VM) run() InterpretResult {
 				return INTERPRET_RUNTIME_ERROR
 			}
 		case OP_PRINT:
-			vm.popStack().Print()
+			val := vm.popStack()
+			val.Print()
 			fmt.Print("\n")
 		case OP_GET_GLOBAL:
 			name := vm.readString()
