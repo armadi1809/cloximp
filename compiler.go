@@ -77,7 +77,9 @@ func (c *Compiler) compile(source string) *ObjFunction {
 }
 
 func (c *Compiler) declaration() {
-	if c.match(TOKEN_VAR) {
+	if c.match(TOKEN_FUN) {
+		c.functionDeclaration()
+	} else if c.match(TOKEN_VAR) {
 		c.varDeclaration()
 	} else {
 		c.statement()
@@ -86,6 +88,12 @@ func (c *Compiler) declaration() {
 	if c.Ps.panicMode {
 		c.synchronize()
 	}
+}
+
+func (c *Compiler) functionDeclaration() {
+	global := c.parseVariable("Expect function name.")
+	c.markInitialized()
+	c.defineVariable(global)
 }
 
 func (c *Compiler) varDeclaration() {
@@ -109,6 +117,9 @@ func (c *Compiler) defineVariable(global byte) {
 }
 
 func (c *Compiler) markInitialized() {
+	if c.ScopeDepth == 0 {
+		return
+	}
 	c.Locals[c.LocalCount-1].depth =
 		c.ScopeDepth
 }
