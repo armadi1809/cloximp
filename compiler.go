@@ -52,12 +52,34 @@ type Compiler struct {
 	Locals     []Local
 	LocalCount int
 	ScopeDepth int
+	Enclosing  *Compiler
 }
 
 type ParseRule struct {
 	prefix     ParseFn
 	infix      ParseFn
 	precedence Precedence
+}
+
+func (c *Compiler) initCompiler(funct FunctionType) {
+	local := Local{
+		depth: 0,
+		name: Token{
+			Lexeme: "",
+		},
+	}
+
+	c.Sc = &Scanner{}
+	c.Function = NewFunction()
+	c.Type = funct
+	c.Ps = &Parser{
+		panicMode: false,
+		hadError:  false,
+	}
+	c.Locals = []Local{local}
+	c.ScopeDepth = 0
+	c.LocalCount = 1
+
 }
 
 func (c *Compiler) compile(source string) *ObjFunction {
@@ -122,6 +144,21 @@ func (c *Compiler) markInitialized() {
 	}
 	c.Locals[c.LocalCount-1].depth =
 		c.ScopeDepth
+}
+
+func (c *Compiler) function(funct FunctionType) {
+	comp := &Compiler{}
+	comp.initCompiler(funct)
+	comp.Ps = c.Ps
+	comp.Enclosing = c
+	comp.beginBlock()
+	comp.consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.")
+	comp.consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.")
+	comp.consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.")
+	comp.block()
+	f := comp.endCompiler()
+	c.emitBytes(OP_CONSTANT, comp.makeConstant(ObjVal{Object: f}))
+
 }
 
 func (c *Compiler) declareVariable() {

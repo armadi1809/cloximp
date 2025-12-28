@@ -31,7 +31,8 @@ type VM struct {
 }
 
 func (vm *VM) initVM() {
-	vm.initCompiler(TYPE_SCRIPT)
+	vm.compiler = &Compiler{}
+	vm.compiler.initCompiler(TYPE_SCRIPT)
 	vm.resetStack()
 	vm.globals = make(map[ObjString]Value)
 	vm.frameCount = 0
@@ -55,26 +56,6 @@ func (vm *VM) Interpret(source string) InterpretResult {
 	return vm.run()
 }
 
-func (vm *VM) initCompiler(funct FunctionType) {
-	local := Local{
-		depth: 0,
-		name: Token{
-			Lexeme: "",
-		},
-	}
-	vm.compiler = &Compiler{
-		Sc:       &Scanner{},
-		Function: NewFunction(),
-		Type:     funct,
-		Ps: &Parser{
-			panicMode: false,
-			hadError:  false,
-		},
-		Locals:     []Local{local},
-		ScopeDepth: 0,
-		LocalCount: 1,
-	}
-}
 func (vm *VM) run() InterpretResult {
 	frame := vm.getCurrentFrame()
 	for {
