@@ -476,6 +476,29 @@ func (c *Compiler) binary(canAssign bool) {
 	}
 }
 
+func (c *Compiler) call(canAssign bool) {
+	argCount := c.argumentList()
+	c.emitBytes(OP_CALL, argCount)
+}
+
+func (c *Compiler) argumentList() byte {
+	argCount := 0
+	if !c.check(TOKEN_RIGHT_PAREN) {
+		for {
+			c.expression()
+			if argCount == 255 {
+				c.error("Can't have more than 255 arguments.")
+			}
+			argCount++
+			if !c.match(TOKEN_COMMA) {
+				break
+			}
+		}
+	}
+	c.consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments.")
+	return byte(argCount)
+}
+
 func (c *Compiler) str(canAssign bool) {
 	c.emitConstant(ObjVal{Object: CreateStringObj(c.Ps.previous.Lexeme[1 : len(c.Ps.previous.Lexeme)-1])})
 }
@@ -627,7 +650,7 @@ func (c *Compiler) errorAt(tok Token, message string) {
 
 func (c *Compiler) initRules() {
 	c.rules = map[TokenType]ParseRule{
-		TOKEN_LEFT_PAREN:    {c.grouping, nil, PREC_NONE},
+		TOKEN_LEFT_PAREN:    {c.grouping, c.call, PREC_NONE},
 		TOKEN_RIGHT_PAREN:   {nil, nil, PREC_NONE},
 		TOKEN_LEFT_BRACE:    {nil, nil, PREC_NONE},
 		TOKEN_RIGHT_BRACE:   {nil, nil, PREC_NONE},

@@ -45,13 +45,7 @@ func (vm *VM) Interpret(source string) InterpretResult {
 		return INTERPRET_COMPILE_ERROR
 	}
 	vm.pushStack(ObjVal{Object: *function})
-	frame := CallFrame{
-		function: function,
-		ip:       0,
-		slots:    len(vm.stack) - 1,
-	}
-	vm.frames = append(vm.frames, frame)
-	vm.frameCount++
+	vm.call(function, 0)
 
 	return vm.run()
 }
@@ -160,8 +154,47 @@ func (vm *VM) run() InterpretResult {
 		case OP_LOOP:
 			offset := vm.readShort()
 			frame.ip -= offset
+		case OP_CALL:
+			argCount := int(vm.readByte())
+			if !vm.callValue(vm.peek(argCount), argCount) {
+				return INTERPRET_RUNTIME_ERROR
+			}
+			frame = &vm.frames[vm.frameCount-1]
 		}
 	}
+}
+
+func (vm *VM) callValue(callee Value, argCount int) bool {
+	if isObj(callee) {
+		switch callee.AsObj().Type() {
+		case OBJ_FUNCTION:
+			f := AsFunc(callee)
+			return vm.call(&f, argCount)
+		}
+	}
+	vm.runtimeError("Can only call functions and classes.")
+	return false
+}
+
+func (vm *VM) call(function *ObjFunction, argCount int) bool {
+	if argCount != function.arity {
+		vm.runtimeError("Expected %d arguments but got %d.",
+			function.arity, argCount)
+		return false
+	}
+
+	if vm.frameCount == FRAME_MAX {
+		vm.runtimeError("Stack overflow.")
+		return false
+	}
+
+	frame := CallFrame{}
+	frame.function = function
+	frame.ip = 0
+	frame.slots = len(vm.stack) - argCount - 2 // TODO: Check if offsets are correct here
+	vm.frames = append(vm.frames, frame)
+	vm.frameCount += 1
+	return true
 }
 
 func (vm *VM) readShort() int {
