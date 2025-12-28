@@ -595,6 +595,7 @@ func (c *Compiler) endCompiler() *ObjFunction {
 }
 
 func (c *Compiler) emitReturn() {
+	c.emitByte(OP_NIL)
 	c.emitByte(OP_RETURN)
 }
 

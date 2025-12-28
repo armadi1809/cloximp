@@ -66,7 +66,21 @@ func (vm *VM) run() InterpretResult {
 		inst := vm.readByte()
 		switch inst {
 		case OP_RETURN:
-			return INTERPRET_OK
+			{
+				result := vm.popStack()
+				vm.frameCount--
+				if vm.frameCount == 0 {
+					vm.popStack()
+					return INTERPRET_OK
+				}
+
+				vm.stack = vm.stack[:frame.slots]
+
+				vm.pushStack(result)
+
+				frame = &vm.frames[vm.frameCount-1]
+				break
+			}
 		case OP_CONSTANT:
 			constant := vm.readConstant()
 			vm.pushStack(constant)
