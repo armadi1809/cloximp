@@ -303,12 +303,21 @@ func isFalsey(v Value) bool {
 }
 
 func (vm *VM) runtimeError(format string, a ...any) {
-	frame := vm.getCurrentFrame()
 	fmt.Fprintf(os.Stderr, format, a...)
 	fmt.Fprintln(os.Stderr)
-	instruction := frame.ip - 1
-	line := frame.function.chunk.lines[instruction]
-	fmt.Fprintf(os.Stderr, "[line %d] in script\n", line)
+	for i := vm.frameCount - 1; i >= 0; i-- {
+		frame := vm.frames[i]
+		function := frame.function
+		instruction := function.chunk.Code[frame.ip-1]
+		fmt.Fprintf(os.Stderr, "[line %d] in \n", frame.function.chunk.lines[instruction])
+		if function.name == nil {
+			fmt.Fprintf(os.Stderr, "script\n")
+		} else {
+			fmt.Fprintf(os.Stderr, "%s()\n", function.name.Characters)
+		}
+
+	}
+	vm.resetStack()
 }
 
 func (vm *VM) getCurrentFrame() *CallFrame {
